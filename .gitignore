@@ -48,3 +48,7 @@ qrenderdoc/3rdparty/pyside
 .DS_Store
 plugins-*/
 __pycache__
+
+# Allow native binaries in agent-harness CLI package
+!agent-harness/cli_anything/renderdoc/native/*.dll
+!agent-harness/cli_anything/renderdoc/native/*.pyd
