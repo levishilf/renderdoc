@@ -40,7 +40,8 @@ def output_table(rows: list, headers: list, file=None):
 
     # Rows
     for row in rows:
-        line = "  ".join(str(v).ljust(col_widths[i]) for i, v in enumerate(row))
+        truncated = row[:len(headers)]
+        line = "  ".join(str(v).ljust(col_widths[i]) for i, v in enumerate(truncated))
         file.write(line + "\n")
 
 

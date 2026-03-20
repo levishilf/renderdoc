@@ -24,7 +24,7 @@ Headless command-line analysis of RenderDoc GPU frame captures (`.rdc` files).
 - **Action tree**: list/search/filter draw calls, clears, dispatches, markers
 - **Texture operations**: list, inspect, export (PNG/JPG/DDS/HDR/EXR), pixel picking
 - **Pipeline state**: full shader/RT/viewport state at any event
-- **Shader analysis**: disassembly, constant buffer readback
+- **Shader analysis**: export shader in human-readable form (HLSL/GLSL/disasm), constant buffer readback
 - **Resource inspection**: buffer/texture enumeration, raw data reading
 - **Mesh data**: vertex shader input/output decoding
 - **GPU counters**: enumerate and fetch hardware performance counters
@@ -59,8 +59,21 @@ cli-anything-renderdoc -c frame.rdc textures pick <id> 100 200
 ### pipeline
 ```bash
 cli-anything-renderdoc -c frame.rdc pipeline state 42
-cli-anything-renderdoc -c frame.rdc pipeline disasm 42 --stage Fragment
+
+# Export shader in human-readable form
+# Text shaders (GLSL/HLSL) → saved directly
+# Binary shaders (DXBC/SPIR-V) → embedded source (HLSL/GLSL) or disassembly
+cli-anything-renderdoc -c frame.rdc pipeline shader-export 42 --stage Fragment
+cli-anything-renderdoc -c frame.rdc pipeline shader-export 42 --stage Vertex -o ./shaders/
+
 cli-anything-renderdoc -c frame.rdc pipeline cbuffer 42 --stage Vertex --index 0
+
+# Compare pipeline state between two events
+# Default output: same directory as the capture file  ;  use -o to override
+cli-anything-renderdoc -c a.rdc pipeline diff 100 200 -b b.rdc
+cli-anything-renderdoc -c frame.rdc pipeline diff 100 200              # same capture
+cli-anything-renderdoc -c a.rdc pipeline diff 100 200 -b b.rdc -o result.json
+cli-anything-renderdoc -c a.rdc pipeline diff 100 200 -b b.rdc --no-compact
 ```
 
 ### resources
@@ -98,6 +111,12 @@ cli-anything-renderdoc -c frame.rdc --json actions summary
 
 ## Agent Usage Notes
 
+- **Use `pipeline shader-export` to extract shaders** — for binary shaders (DXBC/SPIR-V) it auto-exports embedded HLSL/GLSL source or falls back to disassembly; for text shaders (GLSL/HLSL) it saves the raw source directly
+- **Shader formats by capture API**:
+  - D3D11 → DXBC binary, exported as embedded HLSL source (`.hlsl`) or bytecode asm (`.dxbc.asm`)
+  - OpenGL/GLES → GLSL source text (`.glsl`), already human-readable
+  - Vulkan → SPIR-V binary, exported as embedded GLSL source (`.glsl`) or SPIR-V asm (`.spv.asm`)
+- **Use `pipeline diff` to compare two events** — it writes a JSON file and prints only the path; use `-b` for a second capture
 - Always specify `--json` for programmatic consumption
 - Use `actions summary` first to understand capture complexity
 - Use `actions list --draws-only` to focus on actual rendering
